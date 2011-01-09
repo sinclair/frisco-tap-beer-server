@@ -2,7 +2,6 @@ require 'rubygems'
 require 'sinatra'
 require 'open-uri'
 require 'hpricot'
-#require 'plist'
 require 'json'
 
 get '/beers.json' do 
@@ -19,6 +18,7 @@ get '/beers.json' do
     "Referer" => "http://www.friscogrille.com/") { |f|
     response = f.read
   }
+
   collector = []
   doc   =  Hpricot(response)
   (doc/'html/body/div#content/div#beer-list/div#keg-beers/ul/li').each do |e|
@@ -27,6 +27,7 @@ get '/beers.json' do
   (doc/'html/body/div#content/div#beer-list/div#keg-beers/div/ul/li').each do |e|
     collector << e.inner_html()
   end
+
   collector.sort {|a, b| a.downcase <=> b.downcase}.each {|e| beer_list << {key=>e.strip()} }
 
   [status, headers, body.to_json()]

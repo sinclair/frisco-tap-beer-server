@@ -1,0 +1,15 @@
+GEM
+  specs:
+    hpricot (0.8.3)
+    json (1.4.6)
+    rack (1.1.0)
+    sinatra (0.9.4)
+      rack (>= 0.9.1)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  hpricot
+  json
+  sinatra

@@ -29,7 +29,7 @@ get '/beers.json' do
   end
 
   collector.sort {|a, b| a.downcase <=> b.downcase}.each {|e| beer_list << {key=>e.strip()} }
-
-  [status, headers, body.to_json()]
+  
+  [status, headers, "#{params['callback']}(#{body.to_json()});"]
 
 end

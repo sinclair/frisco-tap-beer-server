@@ -28,7 +28,7 @@ get '/beers.json' do
     collector << e.inner_html()
   end
 
-  collector.sort {|a, b| a.downcase <=> b.downcase}.each {|e| beer_list << {key=>e.strip()} }
+  collector.uniq.sort {|a, b| a.downcase <=> b.downcase}.each {|e| beer_list << {key=>e.strip()} }
   
   [status, headers, "#{params['callback']}(#{body.to_json()});"]
 

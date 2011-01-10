@@ -68,7 +68,8 @@ end
 
 
 get '/beers.json' do 
-  response    =   scrape_frisco_site()
-  beer_list   =   extract_beer_list(response)
+  html_page   =   scrape_frisco_site()
+  beer_list   =   extract_beer_list(html_page)
+
   build_response(beer_list)
 end

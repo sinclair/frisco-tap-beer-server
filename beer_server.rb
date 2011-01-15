@@ -65,7 +65,6 @@ end
 
 
 get '/beers.json' do
-puts '---- beers.json'
   data  = read_data()
   beers = process_data(data)
   build_response(beers)

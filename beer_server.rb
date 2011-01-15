@@ -4,52 +4,49 @@ require 'open-uri'
 require 'hpricot'
 require 'json'
 
+URL_BASE  = 'http://www.friscogrille.com/NewBeerList/'
+PATHS     = ['tvlist_left_ie.php', 'tvlist_right_ie.php']
+
 helpers do
 
-  def scrape_frisco_site()
-    url        = 'http://friscogrille.com/beer.php'
-    response   = ''
-    open(url, "User-Agent" => "Ruby/#{RUBY_VERSION}",
-        "From"    => "sinclair.bain@gmail.com",
-        "Referer" => "http://www.friscogrille.com/") { |f| response = f.read }
-    response
-  end
-
-  def extract_beer_list(site_html)
-    beer_collector  =   []
-    doc             =   Hpricot(site_html)
-
-    extract_beers(doc, 'html/body/div#content/div#beer-list/div#keg-beers/ul/li',     beer_collector)
-    extract_beers(doc, 'html/body/div#content/div#beer-list/div#keg-beers/div/ul/li', beer_collector)
-
-    process_beer_list(beer_collector)
-  end
-
-  def extract_beers(dom, selector, collector)
-    (dom/selector).each do |e|
-      collector << e.inner_html()
+  def read_data()
+    result_collector  =  []
+    PATHS.each do |path|
+      doc   =   read_url(URL_BASE+path)
+      extract_beers(doc, result_collector)
     end
+    result_collector
+  end
+
+  def read_url(url)
+    open(url) { |f| Hpricot(f) }
   end
   
-  def process_beer_list(enumerable)
-    key             =   'name'
-    enumerable.
-        uniq.
-        sort {|a, b| a.downcase <=> b.downcase}.collect {|e| {key=>e.strip()} }
+  def extract_beers(dom, collector=[])
+    (dom/'html/body/table').search('//table').each { |e| 
+        (e/'td/p').each { |p| collector<<p.inner_html() } }
+    collector
   end
   
-  def build_response(beer_list)
+  def process_data(beer_and_abv_list=[])
+    tmp_collector  = []
+    
+    (beer_and_abv_list.size/2).times {tmp_collector << beer_and_abv_list.shift(2)}
+    tmp_collector.collect {|a| {'name'=>a.first, 'abv'=>a.last}}
+  end
+  
+  def build_response(list, root_name='beers')
     status        =   200
     headers       =   {'Content-Type'=>'application/json'}
-    response_body =   build_response_body( {'beers'=>beer_list} )
+    response_body =   build_response_body( {root_name=>list}.to_json() )
 
     [status, headers, response_body]
   end
   
-  def build_response_body(beer_list_hash)
-    content   =   beer_list_hash.to_json().to_s()    
-    content   =   build_json_p_response_body(content) if json_p_request?
-    content
+  def build_response_body(json)
+    response_body   =   json.to_s()    
+    response_body   =   build_json_p_response_body(response_body) if json_p_request?
+    response_body
   end
   
   def json_p_request?
@@ -67,9 +64,9 @@ helpers do
 end
 
 
-get '/beers.json' do 
-  html_page   =   scrape_frisco_site()
-  beer_list   =   extract_beer_list(html_page)
-
-  build_response(beer_list)
+get '/beers.json' do
+puts '---- beers.json'
+  data  = read_data()
+  beers = process_data(data)
+  build_response(beers)
 end

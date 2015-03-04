@@ -1,54 +1,53 @@
-require 'rubygems'
 require 'sinatra'
 require 'open-uri'
 require 'hpricot'
 require 'json'
 
-URL_BASE  = 'http://www.friscogrille.com/NewBeerList/'
-PATHS     = ['tvlist_left_ie.php', 'tvlist_right_ie.php']
+URL           = 'http://www.friscogrille.com/cmobile-alt.php'
+SITE_ENCODING = "ISO-8859-1"
 
 helpers do
 
   def read_data()
-    result_collector  =  []
-    PATHS.each do |path|
-      doc   =   read_url(URL_BASE+path)
-      extract_beers(doc, result_collector)
-    end
-    result_collector
+    doc = read_url(URL)
+    extract_beers(doc)
   end
 
   def read_url(url)
     open(url) { |f| Hpricot(f) }
   end
-  
-  def extract_beers(dom, collector=[])
-    (dom/'html/body/table').search('//table').each { |e| 
-        (e/'td/p').each { |p| collector<<p.inner_html() } }
-    collector
+
+  def extract_beers(dom)
+    (dom/'html/body').search('/div/div').collect do |row|
+      size = row.attributes['class']
+      beer = (row/'div')
+      # /sb/ Site has encoding
+      name = beer.first.inner_html.force_encoding(SITE_ENCODING)
+      abv  = beer.last.inner_html.force_encoding(SITE_ENCODING)
+
+      {
+        name: name,
+        abv:  abv,
+        size: size
+      }
+    end
   end
-  
-  def process_data(beer_and_abv_list=[])
-    tmp_collector  = []
-    
-    (beer_and_abv_list.size/2).times {tmp_collector << beer_and_abv_list.shift(2)}
-    tmp_collector.collect {|a| {'name'=>a.first, 'abv'=>a.last}}
-  end
-  
-  def build_response(list, root_name='beers')
-    status        =   200
-    headers       =   {'Content-Type'=>'application/json'}
-    response_body =   build_response_body( {root_name=>list}.to_json() )
+
+  def build_response(beers, root_name='beers')
+    status        =  200
+    headers       =  {'Content-Type'=>'application/json'}
+    json          =  { beers: beers }.to_json
+    response_body =  build_response_body json
 
     [status, headers, response_body]
   end
-  
-  def build_response_body(json)
-    response_body   =   json.to_s()    
+
+  def build_response_body(beers)
+    response_body   =   beers
     response_body   =   build_json_p_response_body(response_body) if json_p_request?
     response_body
   end
-  
+
   def json_p_request?
     callback_param() != nil
   end
@@ -65,7 +64,6 @@ end
 
 
 get '/beers.json' do
-  data  = read_data()
-  beers = process_data(data)
+  beers  = read_data()
   build_response(beers)
 end

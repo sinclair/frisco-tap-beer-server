@@ -1,0 +1,6 @@
+{
+  "name": "Frisco Tap House Beer List",
+  "description": "A server which serves up the current beer list at Frisco Tap, Columbia, MD",
+  "repository": "https://github.com/sinclair/frisco-tap-beer-server",
+  "keywords": ["ruby", "sinatra", "hpricot", "beer", "Frisco", "Tap", "House"]
+}

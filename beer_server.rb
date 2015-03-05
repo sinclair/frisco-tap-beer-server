@@ -63,7 +63,7 @@ helpers do
 end
 
 
-get '/beers.json' do
+get '/' do
   beers  = read_data()
   build_response(beers)
 end
